@@ -8,7 +8,6 @@ def run():
     with grpc.insecure_channel("localhost:9999") as channel:
         stub = db_pb2_grpc.DatabaseServiceStub(channel)
         try:
-
             box = db_pb2.Box(name="bob", id=0, price=23, description="ok", category="food", quantity=2,
                              created_at=timestamp)
             CreateBox = db_pb2.CreateBoxRequest(box=box)
