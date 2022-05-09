@@ -10,6 +10,9 @@ import os
 import grpc
 import db_pb2
 import db_pb2_grpc
+os.environ["USER"] = "david123"
+os.environ["PASSWORD"] = "david123"
+
 USER = os.getenv('USER')
 PASSWORD = os.environ.get('PASSWORD')
 
@@ -22,13 +25,13 @@ class DatabaseServiceServicer(db_pb2_grpc.DatabaseServiceServicer):
         return  collection.find({request},{})
 
     def GetBoxes(self,request,context):
-
+        print(collection.find({},{}))
         return  db_pb2.GetBoxesResponse(collection.find({},{}))
 
     def CreateBox(self, request, context):
-        print("hi")
-        print(request,"hi2")
         collection.insert_one(request)
+        for data in collection.find():
+            print(data)
         return db_pb2.CreateBoxResponse
 
     def UpdateBox(self, request, context):
