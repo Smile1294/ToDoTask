@@ -101,7 +101,6 @@ class DatabaseServiceServicer(db_pb2_grpc.DatabaseServiceServicer):
 
     def GetBoxesInTimeRange(self, request, context):
         try:
-            print(request.start_time)
             db_pb2.Box = collection.find({"created_at.seconds": {"$gte":request.start_time.seconds},"created_at.nanos": {"$gte":request.start_time.nanos},
                                           "created_at.seconds": {"$lte":request.end_time.seconds},"created_at.nanos": {"$lte":request.end_time.nanos}},
                                           {"_id": 0})
