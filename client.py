@@ -21,6 +21,13 @@ def run():
             print(response)
         except:
             print("fail")
+        try:
+            getBox = db_pb2.GetBoxRequest(id=1)
+            response = stub.GetBox(getBox)
+            print(response)
+        except:
+            print("fail getbox")
+
 
 def close(channel):
     channel.close()

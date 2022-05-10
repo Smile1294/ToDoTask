@@ -1,26 +1,15 @@
-import threading
 import time
-import json
-from datetime import datetime
-
-import grpc
-import concurrent
 from concurrent import futures
-import pymongo
-import pymongoarrow
 from pymongo import MongoClient
 import os
 import grpc
 import db_pb2
 import db_pb2_grpc
-import pymongoarrow as pma
-import pyarrow
-import pymongo
-import bson
 import pymongoarrow.monkey
-
+from google.protobuf.timestamp_pb2 import Timestamp
+timestamp = Timestamp()
+timestamp.GetCurrentTime()
 pymongoarrow.monkey.patch_all()
-
 os.environ['USER'] = 'david123'
 os.environ['PASSWORD'] = 'david123'
 
@@ -33,22 +22,26 @@ mydb = cluster.get_default_database()
 collection = mydb.get_collection('test')
 
 
-
 class DatabaseServiceServicer(db_pb2_grpc.DatabaseServiceServicer):
 
     def GetBox(self, request, context):
-        return collection.find({request}, {})
+
+        box = db_pb2.Box(name="bob", id=0, price=23, description="ok", category="food", quantity=2,
+                         created_at=timestamp)
+        return db_pb2.GetBoxResponse(box=box, status=db_pb2.RequestStatus.OK)
 
     def GetBoxes(self, request, context):
-        return db_pb2.GetBoxesResponse(collection.find({}, {}))
+        box =  {"name":"name1","id":0,"price":23,"description":"des","cetgory":"food","quantity":2,
+                "created_at":timestamp}
+        print(box)
+        return db_pb2.GetBoxesResponse(box = box,status=db_pb2.RequestStatus.OK)
 
     def CreateBox(self, request, context):
-        print(context)
-        print(self)
-        collection.insert_one({"name": request.box.name, "id": request.box.id, "price": request.box.price,
+        collection.insert_one({"name": request.box.name, "_id": request.box.id, "price": request.box.price,
                                "description": request.box.description, "category": request.box.category,
-                               "quantity": request.box.quantity, "created_at": {"seconds":request.box.created_at.seconds,"nanos":request.box.created_at.nanos}})
-        return db_pb2.CreateBoxResponse
+                               "quantity": request.box.quantity,
+                               "created_at": {"seconds": request.box.created_at.seconds, "nanos": request.box.created_at.nanos}})
+        return db_pb2.CreateBoxResponse(status=db_pb2.RequestStatus.OK)
 
     def UpdateBox(self, request, context):
         print("we got UpdateBox")
