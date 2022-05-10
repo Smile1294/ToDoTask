@@ -10,8 +10,6 @@ from google.protobuf.timestamp_pb2 import Timestamp
 timestamp = Timestamp()
 timestamp.GetCurrentTime()
 pymongoarrow.monkey.patch_all()
-os.environ['USER'] = 'david123'
-os.environ['PASSWORD'] = 'david123'
 
 USER = os.getenv('USER')
 PASSWORD = os.environ.get('PASSWORD')
@@ -21,39 +19,95 @@ cluster = MongoClient(
 mydb = cluster.get_default_database()
 collection = mydb.get_collection('test')
 
-
 class DatabaseServiceServicer(db_pb2_grpc.DatabaseServiceServicer):
 
     def GetBox(self, request, context):
+        try:
+            db_pb2.Box = collection.find_one({"id": request.id},{"_id":0})
+            if db_pb2.Box is not None:
+                return db_pb2.GetBoxResponse(box=db_pb2.Box, status=db_pb2.RequestStatus.OK)
+            else:
+                return db_pb2.GetBoxResponse(box=db_pb2.Box, status=db_pb2.RequestStatus.ERROR)
 
-        box = db_pb2.Box(name="bob", id=0, price=23, description="ok", category="food", quantity=2,
-                         created_at=timestamp)
-        return db_pb2.GetBoxResponse(box=box, status=db_pb2.RequestStatus.OK)
+        except:
+            return db_pb2.GetBoxResponse(box=db_pb2.Box, status=db_pb2.RequestStatus.ERROR)
+
+
 
     def GetBoxes(self, request, context):
-        box =  {"name":"name1","id":0,"price":23,"description":"des","cetgory":"food","quantity":2,
-                "created_at":timestamp}
-        print(box)
-        return db_pb2.GetBoxesResponse(box = box,status=db_pb2.RequestStatus.OK)
+        try:
+            db_pb2.Box = collection.find({}, {"_id": 0})
+            return db_pb2.GetBoxesResponse(box=db_pb2.Box, status=db_pb2.RequestStatus.OK)
+        except:
+            return db_pb2.GetBoxesResponse(box=db_pb2.Box, status=db_pb2.RequestStatus.ERROR)
+
+
 
     def CreateBox(self, request, context):
-        collection.insert_one({"name": request.box.name, "_id": request.box.id, "price": request.box.price,
-                               "description": request.box.description, "category": request.box.category,
-                               "quantity": request.box.quantity,
-                               "created_at": {"seconds": request.box.created_at.seconds, "nanos": request.box.created_at.nanos}})
-        return db_pb2.CreateBoxResponse(status=db_pb2.RequestStatus.OK)
+        try:
+            db_pb2.Box = collection.find_one({"id": request.box.id}, {"_id": 0})
+            if db_pb2.Box is None:
+                collection.insert_one({"name": request.box.name, "id": request.box.id, "price": request.box.price,
+                                       "description": request.box.description, "category": request.box.category,
+                                       "quantity": request.box.quantity,
+                                       "created_at": {"seconds": request.box.created_at.seconds,
+                                                      "nanos": request.box.created_at.nanos}})
+                return db_pb2.CreateBoxResponse(status=db_pb2.RequestStatus.OK)
+            else:
+                return db_pb2.CreateBoxResponse(status=db_pb2.RequestStatus.ERROR)
+        except:
+            return db_pb2.CreateBoxResponse(status=db_pb2.RequestStatus.ERROR)
+
 
     def UpdateBox(self, request, context):
-        print("we got UpdateBox")
+
+        try:
+            db_pb2.Box = collection.find_one({"id": request.box.id}, {"_id": 0})
+            if db_pb2.Box is None:
+                return db_pb2.CreateBoxResponse(status=db_pb2.RequestStatus.ERROR)
+            else:
+                box = {"name": request.box.name, "id": request.box.id, "price": request.box.price,
+                       "description": request.box.description, "category": request.box.category,
+                       "quantity": request.box.quantity,
+                       "created_at": {"seconds": request.box.created_at.seconds,
+                                      "nanos": request.box.created_at.nanos}}
+                collection.replace_one({"id": request.box.id}, box)
+                return db_pb2.CreateBoxResponse(status=db_pb2.RequestStatus.OK)
+        except:
+            return db_pb2.CreateBoxResponse(status=db_pb2.RequestStatus.ERROR)
+
+
+
 
     def DeleteBox(self, request, context):
-        print("we got DeleteBox")
+        try:
+            db_pb2.Box = collection.find_one({"id": request.id}, {"_id": 0})
+            if db_pb2.Box is None:
+                return db_pb2.DeleteBoxResponse(status=db_pb2.RequestStatus.ERROR)
+            else:
+                collection.delete_one({"id": request.id})
+                return db_pb2.DeleteBoxResponse(status=db_pb2.RequestStatus.OK)
+        except:
+            return db_pb2.DeleteBoxResponse(status=db_pb2.RequestStatus.ERROR)
+
 
     def GetBoxesInCategory(self, request, context):
-        print("we got GetBoxesInCategory")
+        try:
+            db_pb2.Box = collection.find({"category":request.category}, {"_id": 0})
+            return db_pb2.GetBoxesResponse(box=db_pb2.Box, status=db_pb2.RequestStatus.OK)
+        except:
+            return db_pb2.GetBoxesResponse(box=db_pb2.Box, status=db_pb2.RequestStatus.ERROR)
+
 
     def GetBoxesInTimeRange(self, request, context):
-        print("we got GetBoxesInTimeRange")
+        try:
+            print(request.start_time)
+            db_pb2.Box = collection.find({"created_at.seconds": {"$gte":request.start_time.seconds},"created_at.nanos": {"$gte":request.start_time.nanos},
+                                          "created_at.seconds": {"$lte":request.end_time.seconds},"created_at.nanos": {"$lte":request.end_time.nanos}},
+                                          {"_id": 0})
+            return db_pb2.GetBoxesResponse(box=db_pb2.Box, status=db_pb2.RequestStatus.OK)
+        except:
+            return db_pb2.GetBoxesResponse(box=db_pb2.Box, status=db_pb2.RequestStatus.ERROR)
 
 
 def main():
